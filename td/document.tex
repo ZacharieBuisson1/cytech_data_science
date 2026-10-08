@@ -1,0 +1,91 @@
+\documentclass[a4paper,11pt]{article}
+
+% -----------------------------
+% ENCODAGE & LANGUE
+% -----------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% -----------------------------
+% MISE EN PAGE
+% -----------------------------
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% -----------------------------
+% MATHS
+% -----------------------------
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{mathtools}
+
+% -----------------------------
+% GRAPHISMES / IMAGES
+% -----------------------------
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+
+% -----------------------------
+% LISTES PROPRES
+% -----------------------------
+\usepackage{enumitem}
+\setlist[itemize]{noitemsep}
+\setlist[enumerate]{noitemsep}
+
+% -----------------------------
+% CODE SOURCE
+% -----------------------------
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue},
+	commentstyle=\color{gray},
+	stringstyle=\color{orange},
+	numbers=left,
+	numberstyle=\tiny,
+	frame=single,
+	breaklines=true,
+	tabsize=2
+}
+
+% -----------------------------
+% LIENS
+% -----------------------------
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=blue,
+	urlcolor=blue
+}
+
+% -----------------------------
+% EN-TÊTE / PIED DE PAGE
+% -----------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead[L]{Travaux Dirigés 2 - Industrialisation IA}
+\fancyhead[R]{M2 - FINTECH}
+\fancyfoot[C]{\thepage}
+
+% -----------------------------
+% ENVIRONNEMENTS EXERCICES
+% -----------------------------
+\usepackage{tcolorbox}
+
+\newtcolorbox{exercice}[1][]{
+	colback=gray!5,
+	colframe=black,
+	fonttitle=\bfseries,
+	title=Exercice,
+	#1
+}
+
+% -----------------------------
+% COMMANDES PERSO UTILES
+% -----------------------------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}

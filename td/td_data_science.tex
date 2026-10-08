@@ -1,0 +1,255 @@
+\documentclass[a4paper,11pt]{article}
+
+% -----------------------------
+% ENCODAGE & LANGUE
+% -----------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% -----------------------------
+% MISE EN PAGE
+% -----------------------------
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+% -----------------------------
+% MATHS
+% -----------------------------
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{mathtools}
+
+% -----------------------------
+% GRAPHISMES / IMAGES
+% -----------------------------
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+
+% -----------------------------
+% LISTES PROPRES
+% -----------------------------
+\usepackage{enumitem}
+\setlist[itemize]{noitemsep}
+\setlist[enumerate]{noitemsep}
+
+% -----------------------------
+% CODE SOURCE
+% -----------------------------
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+	basicstyle=\ttfamily\small,
+	keywordstyle=\color{blue},
+	commentstyle=\color{gray},
+	stringstyle=\color{orange},
+	numbers=left,
+	numberstyle=\tiny,
+	frame=single,
+	breaklines=true,
+	tabsize=2
+}
+
+% -----------------------------
+% LIENS
+% -----------------------------
+\usepackage{hyperref}
+\hypersetup{
+	colorlinks=true,
+	linkcolor=blue,
+	urlcolor=blue
+}
+
+% -----------------------------
+% EN-TÊTE / PIED DE PAGE
+% -----------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead[L]{Travaux Dirigés 1 - Data Science}
+\fancyhead[R]{M2 - FINTECH}
+\fancyfoot[C]{\thepage}
+
+% -----------------------------
+% ENVIRONNEMENTS EXERCICES
+% -----------------------------
+\usepackage{tcolorbox}
+
+\newtcolorbox{exercice}[1][]{
+	colback=gray!5,
+	colframe=black,
+	fonttitle=\bfseries,
+	title=Exercice,
+	#1
+}
+
+% -----------------------------
+% COMMANDES PERSO UTILES
+% -----------------------------
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+
+\begin{document}
+	
+	\begin{center}
+		{\LARGE\bfseries TD -- Tarification automobile par Machine Learning}\\[6pt]
+		{\large Modélisation de la fréquence et de la gravité des sinistres}
+	\end{center}
+	
+	\section*{Contexte métier}
+	
+	En assurance automobile, la prime est le prix payé par l'assuré pour être couvert en cas de sinistre. Pour fixer ce prix, l'assureur doit concilier deux objectifs :
+	\begin{itemize}
+		\item \textbf{être compétitif} : proposer à chaque client un tarif au plus juste de son risque, sans quoi les bons conducteurs partiront chez un concurrent moins cher ;
+		\item \textbf{être rentable} : sur l'ensemble du portefeuille, les primes encaissées doivent couvrir en moyenne le coût des indemnisations.
+	\end{itemize}
+	
+	La \emph{prime pure} correspond au coût moyen attendu des sinistres d'un client sur la période de couverture. En notant $S$ le montant total des sinistres d'un client sur cette période, elle se décompose ainsi :
+	\[
+	\underbrace{\mathbb{E}[S]}_{\text{prime pure}}
+	\;=\;
+	\underbrace{\mathbb{P}(S > 0)}_{\text{probabilité de sinistre}}
+	\;\times\;
+	\underbrace{\mathbb{E}[S \mid S > 0]}_{\text{montant attendu si sinistre}}
+	\]
+	
+	Cette décomposition conduit naturellement à construire deux modèles distincts :
+	\begin{itemize}
+		\item un \textbf{modèle de fréquence} (classification) : prédire la probabilité qu'un client ait au moins un sinistre ;
+		\item un \textbf{modèle de gravité} (régression) : prédire le montant des sinistres, sachant qu'au moins un sinistre a eu lieu.
+	\end{itemize}
+	La prime prédite pour un client est alors le produit des sorties de ces deux modèles.
+	
+	\section*{Objectifs et organisation du TD}
+	
+	L'objectif de ce TD est de développer ces deux modèles et d'obtenir les meilleures prédictions possibles, évaluées sur la compétition Kaggle de la promotion : \href{https://www.kaggle.com/t/525fcbbbe8dc48a18005e47f00ae34da/}{Kaggle Cytech 2027}.
+	
+	Comme vu en cours, un modèle performant ne s'obtient pas en un appel de fonction : il est le résultat d'une démarche complète, de la compréhension des données jusqu'à l'évaluation. Le TD suit donc les étapes d'un projet de Machine Learning réel, et chaque choix (traitement, métrique, modèle) devra être justifié.
+	
+	Le travail se fait en binôme.
+	
+	La note prendra en compte la qualité des développements, l’organisation du travail, la clarté du livrable et de la présentation ainsi que le respect des consignes, conformément aux critères suivants et aussi la performance des modèles. Il sera évalué la compréhension des concepts et outils utilisés, la justification des choix effectués, la cohérence compte tenu de l'énoncé. 
+	
+	L'utilisation de l'IA est possible mais déconseillée de bout en bout, et il est obligatoire de comprendre l'ensemble des réponses générées pour pouvoir répondre aux questions de l'évaluation et pas que... (\href{https://www.youtube.com/watch?v=4xq6bVbS-Pw}{Vidéo: Pourquoi comprendre ce que l'IA génère dans le cadre des études}). 
+	
+	% ------------------------------------------------------------------
+	\section{Prise en main des données}
+	
+	\subsection*{Actions à réaliser}
+	\begin{enumerate}
+		\item Former les binômes ;
+		\item Créer un compte Kaggle et rejoindre la compétition via le lien ci-dessus ;
+		\item Télécharger les données et identifier le rôle de chaque fichier (données d'entraînement, données de test, format de soumission\dots).
+	\end{enumerate}
+	
+	% ------------------------------------------------------------------
+	\section{Analyse exploratoire des données}
+	
+	Avant toute modélisation, il faut comprendre les données : leur structure, leur qualité et leur lien avec les cibles. C'est cette analyse qui guidera ensuite les choix de traitement et de modélisation.
+	
+	\subsection*{Actions à réaliser}
+	\begin{enumerate}
+		\item Identifier les deux variables cibles et étudier leur distribution : proportion de clients sinistrés, forme de la distribution des montants (asymétrie, valeurs extrêmes) ;
+		\item Décrire les variables explicatives : type (continue, catégorielle), valeurs manquantes, modalités rares, valeurs aberrantes ;
+		\item Étudier le lien entre les variables explicatives et chacune des deux cibles.
+	\end{enumerate}
+	
+	\subsection*{Questions à se poser}
+	\begin{itemize}
+		\item Les classes (sinistré / non sinistré) sont-elles équilibrées ? Quelles conséquences pour le choix de la métrique ?
+		\item Certaines variables pourraient-elles contenir une information indisponible au moment de la tarification (\emph{fuite de données}) ?
+	\end{itemize}
+	
+	% ------------------------------------------------------------------
+	\section{Préparation des données}
+	
+	Le traitement des données dépend du modèle envisagé : une régression logistique et un modèle à base d'arbres n'ont pas les mêmes besoins (normalisation, encodage des variables catégorielles\dots).
+	
+	\subsection*{Actions à réaliser}
+	\begin{enumerate}
+		\item Séparer les données en jeux d'entraînement et de validation (ou mettre en place une validation croisée), de manière cohérente avec les cibles ;
+		\item À partir de l'analyse exploratoire, implémenter les traitements nécessaires : gestion des valeurs manquantes, encodage des variables catégorielles, transformation et normalisation des variables continues\dots ;
+		\item Regrouper ces traitements dans une pipeline réutilisable (par exemple avec \texttt{Pipeline} et \texttt{ColumnTransformer} de scikit-learn).
+	\end{enumerate}
+	
+	\subsection*{Points d'attention}
+	\begin{itemize}
+		\item Les paramètres des traitements (valeurs d'imputation, moyennes et écarts-types de normalisation, encodages) doivent être appris \textbf{uniquement sur le jeu d'entraînement}, puis appliqués aux autres jeux. Sinon, de l'information du jeu de validation fuit dans l'apprentissage et les performances mesurées sont trop optimistes.
+		\item La même pipeline doit pouvoir être appliquée telle quelle au jeu de test Kaggle.
+	\end{itemize}
+	
+	% ------------------------------------------------------------------
+	\section{Modélisation de la fréquence}
+	
+	Ce premier modèle prédit, pour chaque client, la probabilité d'avoir au moins un sinistre.
+	
+	\subsection*{Actions à réaliser}
+	\begin{enumerate}
+		\item Choisir une métrique adaptée à une classification binaire dont la sortie est une probabilité, et justifier ce choix ;
+		\item Établir une référence simple (\emph{baseline}) : prédire le taux moyen de sinistralité, puis une régression logistique ;
+		\item Entraîner des modèles plus complexes et optimiser leurs hyperparamètres ;
+		\item Comparer les performances sur les jeux d'entraînement et de validation, puis conclure : sous-apprentissage, sur-apprentissage, gain par rapport à la référence.
+	\end{enumerate}
+	
+	\subsection*{Points d'attention}
+	\begin{itemize}
+		\item La probabilité prédite sera multipliée par un montant : elle doit être \emph{bien calibrée}, et pas seulement bien ordonner les clients entre eux.
+		\item Avec des classes déséquilibrées, l'\emph{accuracy} est une métrique trompeuse.
+	\end{itemize}
+	
+	% ------------------------------------------------------------------
+	\section{Modélisation de la gravité}
+	
+	Ce second modèle prédit le montant des sinistres. Il est donc entraîné \textbf{uniquement sur les clients ayant eu au moins un sinistre}.
+	
+	\subsection*{Actions à réaliser}
+	\begin{enumerate}
+		\item Construire le jeu d'apprentissage restreint aux clients sinistrés ;
+		\item Choisir une métrique de régression adaptée et justifier ce choix ;
+		\item Établir une \emph{baseline} (montant moyen ou médian), puis entraîner et comparer des modèles plus complexes ;
+		\item Analyser les erreurs : le modèle est-il fiable sur les sinistres les plus coûteux ?
+	\end{enumerate}
+	
+	\subsection*{Points d'attention}
+	\begin{itemize}
+		\item Les montants de sinistres sont en général très asymétriques : une transformation de la cible (logarithme) ou une fonction de perte adaptée (Gamma, Tweedie) peut améliorer le modèle.
+		\item Si la cible est transformée, il faut revenir à l'échelle d'origine avant d'évaluer le modèle et de calculer la prime.
+	\end{itemize}
+	
+	% ------------------------------------------------------------------
+	\section{Calcul de la prime et soumission}
+	
+	Les deux modèles sont enfin combinés pour obtenir la prime pure prédite de chaque client $x$ :
+	\[
+	\widehat{\text{Prime}}(x) = \hat{p}(x) \times \hat{g}(x)
+	\]
+	où $\hat{p}$ est la sortie du modèle de fréquence et $\hat{g}$ celle du modèle de gravité.
+	
+	\subsection*{Actions à réaliser}
+	\begin{enumerate}
+		\item Calculer la prime prédite pour chaque client du jeu de validation ;
+		\item Vérifier la cohérence globale : la somme des primes prédites est-elle proche de la somme des sinistres observés ? L'assureur serait-il rentable ?
+		\item Réentraîner les modèles retenus sur l'ensemble des données d'entraînement, puis générer les prédictions sur le jeu de test au format attendu par la compétition ;
+		\item Soumettre sur Kaggle, analyser le score obtenu et itérer.
+	\end{enumerate}
+	
+	% ------------------------------------------------------------------
+	% À adapter selon vos modalités d'évaluation
+	\section*{Livrables}
+	\begin{itemize}
+		\item Un notebook (ou un dépôt de code) propre, commenté et exécutable de bout en bout ;
+		\item Au moins une soumission Kaggle par binôme ;
+		\item La synthèse complète des travaux réalisés via un powerpoint pour le jour de la soutenance.
+	\end{itemize}
+	
+	% ------------------------------------------------------------------
+	\section*{Pour aller plus loin}
+	\begin{itemize}
+		\item Modéliser directement la prime pure avec un seul modèle (régression Tweedie) et comparer avec l'approche fréquence $\times$ gravité.
+		\item Essayer de faire des prédictions avec des modèles plus avancés / plus complexes et conclure sur la pertinence de ceux-ci.
+		\item Interpréter les modèles (importance des variables, valeurs SHAP) : les variables les plus influentes sont-elles cohérentes avec l'intuition métier ?
+		\item Réglementation : depuis 2012, le sexe de l'assuré ne peut plus être utilisé pour la tarification dans l'Union européenne. Certaines variables de vos modèles pourraient-elles poser question de ce point de vue ?
+	\end{itemize}
+	
+\end{document}
